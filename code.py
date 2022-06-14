@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
-from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score,roc_auc_score
-from sklearn.svm import SVR
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error,mean_squared_error,accuracy_score,roc_auc_score
+from sklearn.svm import SVC, SVR
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn import neighbors
 
 
@@ -32,39 +32,38 @@ for col in base.columns:
 y = base['Survived']
 X = base[['PassengerId','Pclass','Sex','Age','SibSp','Parch','Fare','Embarked']]
 
+print(y.unique())
+
 X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.20,random_state=42)
 
 def train_models(X_train, y_train):
     
  #use Decision Tree
-    depth_levels = [2,3,4,5]
-    for depth in depth_levels:
-        tree = DecisionTreeRegressor(max_depth=depth, random_state = 0)
-        tree.fit(X_train, y_train)
-        y_pred_tree = tree.predict(X_test)
-        AUC_tree = roc_auc_score(y_test, y_pred_tree)
-        print(AUC_tree)
-    
+
+    tree = DecisionTreeClassifier(max_depth = 4, random_state = 0)
+    tree.fit(X_train, y_train)
+    y_pred_tree = tree.predict(X_test)
+    print(y_pred_tree)
+
 
   #use the RandomForestRegressor
-    
-    rf = RandomForestRegressor(n_estimators = 100,max_features =75, random_state = 0)
+    rf = RandomForestClassifier(n_estimators = 100,max_features =75, random_state = 0)
     rf.fit(X_train, y_train)
     y_pred_rf= rf.predict(X_test)
     
   # use the support vector regressor
     #from sklearn.svm import SVR
-    svr= SVR(kernel = 'rbf')
+    svr= SVC(kernel = 'rbf')
     svr.fit(X_train, y_train)
     y_pred_svr = svr.predict(X_test)
     
     #from sklearn.svm import SVR
-    svr_l= SVR(kernel = 'linear')
+    svr_l= SVC(kernel = 'linear')
     svr_l.fit(X_train, y_train)
     y_pred_svr_linear = svr_l.predict(X_test)
 
     # use the knn regressor
-    knn = neighbors.KNeighborsRegressor()
+    knn = neighbors.KNeighborsClassifier()
     knn.fit(X_train, y_train)
     y_pred_knn = knn.predict(X_test)
     
@@ -80,7 +79,7 @@ def train_models(X_train, y_train):
     rootMeanSqErr_rf= np.sqrt(metrics.mean_squared_error(y_test, y_pred_rf))
     AUC_rf = roc_auc_score(y_test, y_pred_rf)
 
-    # metrics of knn regressor
+    # metrics of knn classifier
     meanAbErr_knn = metrics.mean_absolute_error(y_test, y_pred_knn)
     meanSqErr_knn = metrics.mean_squared_error(y_test, y_pred_knn)
     rootMeanSqErr_knn= np.sqrt(metrics.mean_squared_error(y_test, y_pred_knn))
@@ -94,27 +93,27 @@ def train_models(X_train, y_train):
 
   #print the training accurancy of each model:
 
-    print('[1]Decision Tree Training Accurancy: ', r2_score(y_test,y_pred_tree))
+    print('[1]Decision Tree Training Accurancy: ', accuracy_score(y_test,y_pred_tree))
     print('Mean Absolute Error:', meanAbErr_tree)
     print('Mean Square Error:', meanSqErr_tree)
     print('Root Mean Square Error:', rootMeanSqErr_tree)
     print('AUC:', AUC_tree)
     print('\t')
-    print('[2]RandomForestRegressor Training Accurancy: ',r2_score(y_test,y_pred_rf))
+    print('[2]RandomForestRegressor Training Accurancy: ',accuracy_score(y_test,y_pred_rf))
     print('Mean Absolute Error:', meanAbErr_rf)
     print('Mean Square Error:', meanSqErr_rf)
     print('Root Mean Square Error:', rootMeanSqErr_rf)
     print('AUC:', AUC_rf)
     print('\t')    
-    print('[3]SupportvectorRegression Accuracy(rbf): ', r2_score(y_test,y_pred_svr))
+    print('[3]SupportvectorRegression Accuracy(rbf): ', accuracy_score(y_test,y_pred_svr))
     print('\t')
-    print('[4]SupportvectorRegression Accuracy(linear): ', r2_score(y_test,y_pred_svr_linear))
+    print('[4]SupportvectorRegression Accuracy(linear): ', accuracy_score(y_test,y_pred_svr_linear))
     print('Mean Absolute Error:', meanAbErr_svr)
     print('Mean Square Error:', meanSqErr_svr)
     print('Root Mean Square Error:', rootMeanSqErr_svr)
     print('AUC:', AUC_svr)
     print('\t')
-    print('[5]knn Training Accurancy: ', r2_score(y_test,y_pred_knn))
+    print('[5]knn Training Accurancy: ', accuracy_score(y_test,y_pred_knn))
     print('Mean Absolute Error:', meanAbErr_knn)
     print('Mean Square Error:', meanSqErr_knn)
     print('Root Mean Square Error:', rootMeanSqErr_knn)
