@@ -1,15 +1,14 @@
 from ast import increment_lineno
+from pickle import TRUE
 import pandas as pd
 import numpy as np
-import seaborn as sb
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
 from sklearn.metrics import mean_absolute_error,mean_squared_error,accuracy_score,roc_auc_score
-from sklearn.svm import SVC, SVR
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import neighbors
 
 
@@ -38,42 +37,39 @@ X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.20,random_state
 
 def train_models(X_train, y_train):
     
- #use Decision Tree
-
+    #use Decision Tree
     tree = DecisionTreeClassifier(max_depth = 4, random_state = 0)
     tree.fit(X_train, y_train)
     y_pred_tree = tree.predict(X_test)
     print(y_pred_tree)
 
-
-  #use the RandomForestRegressor
+    #use the RandomForest classifier
     rf = RandomForestClassifier(n_estimators = 100,max_features =75, random_state = 0)
     rf.fit(X_train, y_train)
     y_pred_rf= rf.predict(X_test)
     
-  # use the support vector regressor
-    #from sklearn.svm import SVR
+    #from sklearn.svm import SVC
     svr= SVC(kernel = 'rbf')
     svr.fit(X_train, y_train)
     y_pred_svr = svr.predict(X_test)
     
-    #from sklearn.svm import SVR
+    #from sklearn.svm import SVC
     svr_l= SVC(kernel = 'linear')
     svr_l.fit(X_train, y_train)
     y_pred_svr_linear = svr_l.predict(X_test)
 
-    # use the knn regressor
+    # use the knn classifier
     knn = neighbors.KNeighborsClassifier()
     knn.fit(X_train, y_train)
     y_pred_knn = knn.predict(X_test)
     
-  # metrics of decision tree regressor
+  # metrics of decision tree classifier
     meanAbErr_tree= metrics.mean_absolute_error(y_test, y_pred_tree)
     meanSqErr_tree= metrics.mean_squared_error(y_test, y_pred_tree)
     rootMeanSqErr_tree= np.sqrt(metrics.mean_squared_error(y_test, y_pred_tree))
     AUC_tree = roc_auc_score(y_test, y_pred_tree)
 
-  # metrics of random forest regressor
+  # metrics of random forest classifier
     meanAbErr_rf= metrics.mean_absolute_error(y_test, y_pred_rf)
     meanSqErr_rf= metrics.mean_squared_error(y_test, y_pred_rf)
     rootMeanSqErr_rf= np.sqrt(metrics.mean_squared_error(y_test, y_pred_rf))
@@ -85,14 +81,13 @@ def train_models(X_train, y_train):
     rootMeanSqErr_knn= np.sqrt(metrics.mean_squared_error(y_test, y_pred_knn))
     AUC_knn = roc_auc_score(y_test, y_pred_knn) 
 
-  # metrics of svr regressor
+  # metrics of svc
     meanAbErr_svr = metrics.mean_absolute_error(y_test, y_pred_svr_linear)
     meanSqErr_svr = metrics.mean_squared_error(y_test, y_pred_svr_linear)
     rootMeanSqErr_svr= np.sqrt(metrics.mean_squared_error(y_test, y_pred_svr_linear))
     AUC_svr = roc_auc_score(y_test, y_pred_svr_linear) 
 
   #print the training accurancy of each model:
-
     print('[1]Decision Tree Training Accurancy: ', accuracy_score(y_test,y_pred_tree))
     print('Mean Absolute Error:', meanAbErr_tree)
     print('Mean Square Error:', meanSqErr_tree)
@@ -121,3 +116,31 @@ def train_models(X_train, y_train):
     print('\t')
 
 train_models(X_train,y_train)
+
+# Validation and prediction
+
+valid = pd.read_csv("test.csv")
+
+for col in valid.columns:
+    if valid[col].isnull().mean()*100>40:
+        valid.drop(col,axis=1,inplace=True)
+
+f = lambda x: x.median() if np.issubdtype(x.dtype, np.number) else x.mode().iloc[0]
+valid = valid.fillna(valid.groupby('SibSp').transform(f))
+
+
+le=LabelEncoder()
+for col in valid.columns:
+    if valid[col].dtypes == object:
+        valid[col]= le.fit_transform(valid[col])
+
+
+X_valid = valid[['PassengerId','Pclass','Sex','Age','SibSp','Parch','Fare','Embarked']]
+rf = RandomForestClassifier(n_estimators = 100,max_features =75, random_state = 0)
+rf.fit(X_train, y_train)
+valid['Survived'] = rf.predict(X_valid)
+
+results = valid[["PassengerId", "Survived"]]
+results.to_csv("results.csv",header=True,index=False)
+
+print(results)
